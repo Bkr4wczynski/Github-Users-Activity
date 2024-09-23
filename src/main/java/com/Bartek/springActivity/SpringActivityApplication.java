@@ -6,6 +6,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.*;
 
@@ -23,13 +24,23 @@ public class SpringActivityApplication {
 		return runner -> {
 			System.out.println("Please provide github username");
 			String username = scanner.nextLine();
-			List apiResponse = apiCaller.callGetRequest("users/"+username+"/events");
-			System.out.println("Output: ");
-			for (Object activity : apiResponse) {
-				System.out.println(formatApiResponse((LinkedHashMap) activity));
+			List apiResponse = null;
+			try {
+				apiResponse = apiCaller.callGetRequest("users/"+username+"/events");
+				System.out.println("Output: ");
+				for (Object activity : apiResponse) {
+					System.out.println(formatApiResponse((LinkedHashMap) activity));
+				}
+			} catch (HttpClientErrorException.NotFound e) {
+				System.out.println("User with such a username has not been found!");
 			}
-			context.close();
-			return;
+			catch (Exception e) {
+				System.out.println("Api failure!");
+			}
+			finally {
+				context.close();
+			}
+
 		};
 	}
 	private String formatApiResponse(LinkedHashMap activity) {
